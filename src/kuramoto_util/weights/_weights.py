@@ -48,7 +48,7 @@ class PowerLaw(ParametrizedWeight):
         super().__init__(shape)
         self._params['nu'] = nu
         self._params['type'] = self.name = 'power'
-        self.label = f'power({nu})'
+        self._params['label'] = self.label = f'power({nu})'
 
         for k, v in np.ndenumerate(self._weight):
             if k == self._origin:
@@ -68,7 +68,7 @@ class NearestNeighbor(ParametrizedWeight):
 
             self._weight[p1] = 1
             self._weight[p2] = 1
-        self.label = 'nearest'
+        self._params['label'] = self.label = 'nearest'
 
 
 

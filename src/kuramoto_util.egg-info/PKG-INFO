@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: kuramoto-util
-Version: 0.0.2
+Version: 0.0.3
 Summary: package for Kuramoto model simulations
 Home-page: https://github.com/michael-960/kuramoto_util
 Author: Michael Wang

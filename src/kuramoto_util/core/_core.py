@@ -89,8 +89,6 @@ class KuramotoBase:
         else:
             return self._weightobj.get_label()
 
-
-
         
 
 class KuramotoStateFunction(StateFunction):

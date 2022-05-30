@@ -8,14 +8,15 @@ from typing import List, Optional
 from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend, fft, ifft
+from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend, fft, ifft, fftn, ifftn
 import pyfftw
 import h5py
 
 from michael960lib.math import fourier
 from michael960lib.common import overrides, experimental, deprecated
 from michael960lib.common import ModifyingReadOnlyObjectError, IllegalActionError 
-from torusgrid.grids import RealGrid2D, ComplexGrid2D, RealGrid1D, ComplexGrid1D
+
+from torusgrid.grids import ComplexGridND
 from torusgrid.dynamics import FancyEvolver, EvolverHistory, StateFunction
 
 from ..core import KuramotoStateFunction, KuramotoBase
@@ -74,8 +75,11 @@ class KuramotoReader:
         self.file = h5py.File(fname, 'r')
 
         self.K = self.file.attrs['K']
-        self.shape = np.array(self.file['shape'])
+        self.shape = tuple(self.file['shape'])
+        self.N = np.prod(self.shape)
 
+
+   
         self.theta_params = dict(self.file['theta'].attrs)
         self.theta = self.file['theta']
         self.theta_seed = self.theta_params.get('seed', '?')
@@ -89,19 +93,63 @@ class KuramotoReader:
 
         self.weight_params = dict(self.file['weight'].attrs)
         self.weight = np.array(self.file['weight'])
+        self.wk = fftn(self.weight)
+
         self.nu = self.weight_params.get('nu', np.NaN)
         self.weight_type = self.weight_params.get('type', '?')
 
         self.t = np.array(self.file['t'])
         self.Nt = len(self.t)
         self.t_max = self.t[-1]
-
         self.dt = self.file.attrs['dt']
+        self.dT = self.t[-1] - self.t[-2]
 
         self.datetime = self.file.attrs.get('time', '?')
+
+        self._Z = ComplexGridND(self.shape)
+        self._Z.initialize_fft()
+
+    def get_theta_label(self):
+        return self.file['theta'].attrs.get('label', '?')
+
+    def get_omega_label(self):
+        return self.file['omega'].attrs.get('label', '?')
+
+    def get_weight_label(self):
+        return self.file['weight'].attrs.get('label', '?')
+
 
     def get_dimensions(self):
         return len(self.shape)
 
+    def get_local_Z(self, index: int):
+        theta = self.theta[index]
+        self._Z.set_psi(np.exp(1j*theta))
+        self._Z.fft()
+        self._Z.psi_k *= self.wk
+        self._Z.ifft()
+        return self._Z.psi
+
+    def get_global_Z(self, index: int):
+        theta = self.theta[index]
+        return np.sum(np.exp(1j*theta)) / self.N
+
+    def get_correlation_function(self, index: int, shift=True):
+        theta = self.theta[index]
+        self._Z.set_psi(np.exp(1j*theta))
+        Z0 = self.get_global_Z(index)
+
+        self._Z.fft()
+        self._Z.psi_k *= np.conj(self._Z.psi_k)
+        self._Z.ifft()
+
+        corr = self._Z.psi / self.N - np.abs(Z0)**2
+        
+        if shift:
+            shift = tuple(n//2 for n in self.shape)
+            axes = np.arange(self.get_dimensions())
+            corr = np.roll(corr, shift, axis=axes)
+
+        return corr
 
 

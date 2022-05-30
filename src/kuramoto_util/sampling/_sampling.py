@@ -48,7 +48,7 @@ class Uniform(DistributionSampling):
         self._params['low'] = low
         self._params['high'] = high
         self._params['type'] = 'uniform'
-        self.label = f'uniform {low:.3f}~{high:.3f}'
+        self._params['label'] = self.label = f'uniform {low:.3f}~{high:.3f}'
 
 
 class Lorentzian(DistributionSampling):
@@ -58,7 +58,8 @@ class Lorentzian(DistributionSampling):
         self._params['mean'] = mean
         self._params['scale'] = scale
         self._params['type'] = 'cauchy'
-        self.label = f'cauchy({mean:.3f},{scale:.3f})'
+        self._params['label'] = self.label = f'cauchy({mean:.3f},{scale:.3f})'
+
 
 class Gaussian(DistributionSampling):
     def __init__(self, shape: Tuple[int], seed: int, mean: float, scale: float):
@@ -67,7 +68,7 @@ class Gaussian(DistributionSampling):
         self._params['mean'] = mean
         self._params['scale'] = scale
         self._params['type'] = 'normal'
-        self.label = f'normal({mean:.3f},{scale:.3f})'
+        self._params['label'] = self.label = f'normal({mean:.3f},{scale:.3f})'
 
 
 
